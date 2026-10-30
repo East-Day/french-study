@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>法语默写 · 功能检查</title>
+  <style>body{max-width:1000px;margin:32px auto;padding:0 20px;font-family:system-ui,sans-serif;line-height:1.7;color:#173c36;background:#f7f8f4}h1{font-size:26px}li{padding:6px 0}.pass{color:#176b42}.fail{color:#a62c2c}code{white-space:pre-wrap}a{color:inherit}</style>
+  <script src="../data/vocabulary.js"></script>
+  <script src="../core.js"></script>
+  <script src="core.test.js"></script>
+</head>
+<body>
+  <h1>法语默写功能检查</h1>
+  <p>这个页面使用独立的内存数据测试判题和保存恢复规则，不会更改你的真实练习记录。</p>
+  <p id="summary" role="status">正在检查……</p>
+  <ol id="results"></ol>
+  <p><a href="../index.html">返回默写网页</a></p>
+  <script>
+    const summary = runCoreTests();
+    document.getElementById('summary').textContent = `通过 ${summary.passed} 项；失败 ${summary.failed} 项。`;
+    for (const result of summary.results) {
+      const item = document.createElement('li');
+      item.className = result.passed ? 'pass' : 'fail';
+      item.textContent = `${result.passed ? '通过' : '失败'} · ${result.name}${result.error ? '：' + result.error : ''}`;
+      document.getElementById('results').append(item);
+    }
+  </script>
+</body>
+</html>
