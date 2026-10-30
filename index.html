@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#174c43">
+  <meta name="description" content="根据外教法语课分类复习手册制作的离线法语单词默写练习，支持分类、错题和自动保存。">
+  <title>法语单词默写 · 我的法语练习本</title>
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="data/vocabulary.js"></script>
+  <script defer src="core.js"></script>
+  <script defer src="pairs.js"></script>
+  <script defer src="app.js"></script>
+  <script defer src="data/vocabulary-icons.js"></script>
+  <script defer src="learning.js"></script>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="page-header">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">é</span><span>我的法语练习本<small>MON CAHIER DE FRANÇAIS</small></span></div>
+      <span class="offline-badge"><span aria-hidden="true"></span>离线也能练习</span>
+    </header>
+
+    <main>
+      <nav class="mode-switch" aria-label="学习与练习模式">
+        <button id="learn-mode-button" type="button" class="button" aria-pressed="true" aria-controls="learning-panel">📖 学习模式</button>
+        <button id="practice-mode-button" type="button" class="button" aria-pressed="false" aria-controls="practice-panel">✍️ 练习模式</button>
+      </nav>
+      <section class="intro" aria-labelledby="page-title">
+        <p class="eyebrow">UN MOT À LA FOIS</p>
+        <h1 id="page-title">把法语，<span>一点点记牢。</span></h1>
+        <p class="intro-copy" id="mode-description">先认识单词，再试着默写。每天留一点时间，复习课堂里学过的单词。</p>
+      </section>
+
+      <section id="learning-panel" aria-label="学习词汇">
+        <div class="learning-toolbar">
+          <div><label class="field-label" for="learn-category">主题分类</label><select id="learn-category"></select></div>
+          <div class="learn-search-wrap"><label class="field-label" for="learn-search">搜索词汇</label><input id="learn-search" type="search" placeholder="输入中文或法文，如 苹果 / pomme" autocomplete="off" aria-controls="learn-cards"></div>
+          <button id="learn-practice" class="button primary" type="button">练习本分类 →</button>
+        </div>
+        <p class="learning-help">每页 24 张卡片 · 图标辅助理解，词义请以中文释义为准。“练习本分类”会开始该分类的新一轮；顶部模式切换可继续原练习。</p>
+        <p id="learn-results" class="learning-results" role="status" aria-live="polite"></p>
+        <div id="learn-cards" class="word-grid"></div>
+        <p id="learn-empty" class="empty-state" hidden>没有找到匹配词汇，试试其他关键词或选择全部分类。</p>
+        <nav class="learning-pagination" aria-label="词汇分页">
+          <button id="learn-prev" type="button" class="button secondary">← 上一页</button>
+          <span id="learn-page" aria-live="polite"></span>
+          <button id="learn-next" type="button" class="button secondary">下一页 →</button>
+        </nav>
+      </section>
+
+      <div id="practice-panel" class="study-layout" hidden>
+        <aside class="study-sidebar" aria-label="练习设置">
+          <section class="settings-panel">
+            <div class="panel-heading"><h2>这次练什么</h2><span class="small-label">练习设置</span></div>
+            <label class="field-label" for="category-select">主题分类</label>
+            <select id="category-select"></select>
+            <label class="field-label" for="order-select">出题顺序</label>
+            <select id="order-select"><option value="random">随机出题</option><option value="ordered">按手册顺序</option></select>
+            <button id="start-button" type="button" class="button primary full-width">开始新一轮 <span aria-hidden="true">↗</span></button>
+            <button id="review-button" type="button" class="button secondary full-width">错题重练 <span id="wrong-count" class="count-badge">0</span></button>
+            <p id="settings-note" class="settings-note">选择分类后，点击“开始新一轮”。</p>
+          </section>
+
+          <section class="stats-panel" aria-label="本轮统计">
+            <h2>学习足迹</h2>
+            <div class="stat-row"><span>词库练习数</span><strong id="stat-total">—</strong></div>
+            <div class="stat-row"><span>本轮已答</span><strong id="stat-progress">—</strong></div>
+            <div class="stat-row"><span>本轮正确率</span><strong id="stat-accuracy">—</strong></div>
+            <p class="stat-caption">拼写、所写冠词和本题要求的性别都正确，才算答对。</p>
+          </section>
+
+          <div class="practice-tip"><span class="tip-symbol" aria-hidden="true">✳</span><p>不用急着看答案。<br>先试着回想，记忆会更牢。</p></div>
+        </aside>
+
+        <section class="practice-area" aria-label="单词默写">
+          <div class="round-header"><span id="round-label">单词练习</span><span id="progress-text">准备开始</span></div>
+          <progress id="progress-bar" max="1" value="0" aria-label="本轮进度"></progress>
+
+          <article id="question-card" class="question-card" aria-labelledby="question-title">
+            <div class="question-topline"><span id="question-category" class="category-tag">正在载入词库</span><span class="question-overline">请写出对应法文</span></div>
+            <p id="question-pos" class="part-of-speech"></p>
+            <h2 id="question-title" class="question-title">准备好，开始默写。</h2>
+            <p id="question-hint" class="question-hint"></p>
+
+            <form id="answer-form" novalidate>
+              <label class="answer-label" for="answer-input">你的答案</label>
+              <div class="answer-columns">
+                <div>
+                  <label id="male-label" for="answer-input" hidden>阳性形式 masculin</label>
+                  <input id="answer-input" class="answer-input" name="answer" type="text" lang="fr" autocomplete="off" spellcheck="false" autocapitalize="none" autocorrect="off" placeholder="输入阳性形式…" aria-describedby="input-tip form-error">
+                </div>
+                <div id="female-wrap" hidden>
+                  <label for="female-input">阴性形式 féminin</label>
+                  <input id="female-input" class="answer-input" type="text" lang="fr" autocomplete="off" spellcheck="false" autocapitalize="none" autocorrect="off" placeholder="输入阴性形式…" aria-describedby="input-tip form-error">
+                </div>
+              </div>
+              <p id="input-tip" class="input-tip">名词可以不写冠词，请保留法语重音。</p>
+              <fieldset id="gender-fieldset" hidden>
+                <legend>这个名词的性别是？</legend>
+                <div class="gender-options">
+                  <label class="gender-option"><input type="radio" name="gender" value="m"><span>阳性 <small lang="fr">masculin</small></span></label>
+                  <label class="gender-option"><input type="radio" name="gender" value="f"><span>阴性 <small lang="fr">féminin</small></span></label>
+                </div>
+              </fieldset>
+              <div id="accent-keys" class="accent-keys" role="group" aria-label="点击输入法语特殊字符">
+                <span class="accent-label">重音快捷键</span>
+                <div class="accent-buttons">
+                  <button type="button" data-char="é" aria-label="输入 é">é</button>
+                  <button type="button" data-char="è" aria-label="输入 è">è</button>
+                  <button type="button" data-char="ê" aria-label="输入 ê">ê</button>
+                  <button type="button" data-char="ë" aria-label="输入 ë">ë</button>
+                  <button type="button" data-char="à" aria-label="输入 à">à</button>
+                  <button type="button" data-char="â" aria-label="输入 â">â</button>
+                  <button type="button" data-char="î" aria-label="输入 î">î</button>
+                  <button type="button" data-char="ï" aria-label="输入 ï">ï</button>
+                  <button type="button" data-char="ô" aria-label="输入 ô">ô</button>
+                  <button type="button" data-char="ù" aria-label="输入 ù">ù</button>
+                  <button type="button" data-char="û" aria-label="输入 û">û</button>
+                  <button type="button" data-char="ü" aria-label="输入 ü">ü</button>
+                  <button type="button" data-char="ç" aria-label="输入 ç">ç</button>
+                  <button type="button" data-char="œ" aria-label="输入 œ">œ</button>
+                  <button type="button" data-char="’" aria-label="输入弯撇号">’</button>
+                </div>
+              </div>
+              <p id="form-error" class="form-error" role="alert"></p>
+              <div class="answer-actions">
+                <button id="submit-button" type="submit" class="button primary">提交答案 <kbd>Enter ↵</kbd></button>
+                <button id="skip-button" type="button" class="button text-button">不会，查看答案</button>
+                <button id="next-button" type="button" class="button primary" hidden>下一题 <kbd>Enter ↵</kbd></button>
+              </div>
+            </form>
+
+            <section id="feedback" class="feedback" hidden role="status" aria-live="polite" aria-atomic="true">
+              <h3 id="feedback-title"></h3>
+              <div class="result-row"><p id="spelling-result"></p><p id="gender-result"></p></div>
+              <p class="correct-label">正确答案</p>
+              <p id="correct-answer" class="correct-answer" lang="fr"></p>
+              <p id="answer-meaning" class="answer-meaning"></p>
+              <p id="answer-meta" class="answer-meta"></p>
+              <p id="answer-alternatives" class="answer-alternatives"></p>
+              <p id="answer-note" class="answer-note"></p>
+            </section>
+          </article>
+
+          <section id="empty-state" class="empty-state" hidden>
+            <div class="empty-symbol" aria-hidden="true">✓</div>
+            <h2 id="empty-title">这里暂时没有错题</h2>
+            <p id="empty-description">选择一个分类，开始新一轮练习吧。</p>
+          </section>
+
+          <section id="summary" class="summary" hidden aria-live="polite">
+            <span class="summary-decoration" aria-hidden="true">✦</span>
+            <p class="eyebrow">BIEN JOUÉ</p>
+            <h2 id="summary-title">这一轮，完成了。</h2>
+            <p id="summary-text"></p>
+            <div class="summary-actions"><button id="summary-restart" type="button" class="button primary">再练一轮</button><button id="summary-review" type="button" class="button secondary">重练错题</button></div>
+          </section>
+
+          <div class="under-card"><span id="storage-status">练习进度与错题保存在当前浏览器</span><span>小小积累，慢慢进步。</span></div>
+        </section>
+      </div>
+
+      <details id="source-details" class="source-details">
+        <summary><span>手册说明与待核对条目</span><span class="details-caption">词库来源 · 出题规则 · 原文疑点</span></summary>
+        <div class="source-content">
+          <p id="source-summary">词库来源：《外教法语课分类复习手册.docx》。</p>
+          <p>人物称谓按题目要求填写相应性别形式；形容词按题目指定的词形默写。固定性别名词的拼写与性别分别判定。</p>
+          <p>首尾空格、大小写及直／弯撇号不影响判题。重音符号会检查；“不会，查看答案”会计入错题，答对后从待复习错题中移除。</p>
+          <p class="source-notice">以下内容可能包含词汇答案，建议结束练习后再查看。</p>
+          <div id="issues-list"></div>
+        </div>
+      </details>
+    </main>
+
+    <footer class="page-footer"><span>法语单词默写</span><span>从课堂笔记，到自己的记忆。</span></footer>
+  </div>
+  <noscript><div class="noscript-warning">请在浏览器中开启 JavaScript，才能使用默写练习。无需联网或安装其他软件。</div></noscript>
+</body>
+</html>
